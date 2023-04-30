@@ -8,7 +8,8 @@ function App() {
   const [backspaceStack, setBackspaceStack] = useState([]);
   const [name, setName] = useState("");
   const [totalResult, setTotalResult] = useState([]);
-  const givenText = "the quick brown fox jumps";
+  const givenText =
+    "the quick brown fox jumps over the lazy dog showcasing the use of all letters of the english alphabet this pangram has been widely used as a tool to test the readability and legibility of fonts as well as to showcase the ability to type all the letters of the alphabet in a single sentence";
   const [i, setI] = useState(0);
 
   const handleName = (event) => {
@@ -114,10 +115,28 @@ function App() {
   return (
     <div>
       Type the following paragraph
+      <br />
+      <br />
       <div>{givenText}</div>
-      <input id="nameId" type="text" className="input" onKeyDown={handleName} />
-      <input id="keyId" type="text" className="input" onKeyDown={handleKey} />
+      <br />
+      <input
+        id="nameId"
+        type="text"
+        className="input"
+        onKeyDown={handleName}
+        placeholder="name"
+      />
+      <br />
+      <input
+        id="keyId"
+        type="text"
+        className="input"
+        onKeyDown={handleKey}
+        placeholder="text"
+      />
+      <br />
       <div onClick={handleDone}>Done</div>
+      <br />
       <CSVLink data={totalResult}>Download me</CSVLink>;
     </div>
   );

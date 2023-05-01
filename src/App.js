@@ -35,6 +35,75 @@ function App() {
     }
   };
 
+  const initializeCharCounts = () => {
+    const charCounts = {};
+    for (let char of "abcdefghijklmnopqrstuvwxyz") {
+      charCounts[char] = 0;
+    }
+    return charCounts;
+  };
+
+  const countGivenChars = (givenChars, givenCharCounts) => {
+    for (let char of givenChars) {
+      givenCharCounts[char]++;
+    }
+  };
+
+  const calculateSegmentResult = (
+    index,
+    segmentLength,
+    givenChars,
+    correctCharCounts
+  ) => {
+    const segmentStart = index * segmentLength;
+    const segmentEnd = Math.min(
+      segmentStart + segmentLength,
+      givenChars.length
+    );
+    const segmentTypedChars = characters.slice(segmentStart, segmentEnd);
+    const segmentTypedText = segmentTypedChars
+      .map((char) => char.name)
+      .join("");
+    const segmentCorrectChars = segmentTypedChars.filter((char, j) => {
+      const typedChar = char.name;
+      const isCorrect = typedChar === givenChars[segmentStart + j];
+      if (isCorrect) correctCharCounts[typedChar]++;
+      return isCorrect;
+    });
+
+    const segmentAccuracy = Math.round(
+      (segmentCorrectChars.length / segmentLength) * 100
+    );
+    const segmentWords = segmentTypedText.split(" ");
+    const segmentTotalTime = segmentTypedChars.length
+      ? segmentTypedChars[segmentTypedChars.length - 1].time -
+        (segmentStart > 0 ? characters[segmentStart - 1].time : 0)
+      : 0;
+    const segmentWpm = Math.round(
+      (segmentWords.length / segmentTotalTime) * 60000
+    );
+
+    return {
+      correctChars: segmentCorrectChars.length,
+      totalTime: segmentTotalTime,
+      accuracy: segmentAccuracy,
+      speed: segmentWpm,
+    };
+  };
+
+  const calculateIndividualCharAccuracy = (
+    result,
+    correctCharCounts,
+    givenCharCounts
+  ) => {
+    for (let char of "abcdefghijklmnopqrstuvwxyz") {
+      result[`${char}_accuracy`] =
+        givenCharCounts[char] > 0
+          ? correctCharCounts[char] / givenCharCounts[char]
+          : -1;
+    }
+  };
+
   const handleDone = () => {
     const numChars = givenText.length;
     const numSegments = 5;
@@ -45,62 +114,33 @@ function App() {
       speed: 0,
     };
 
-    const givenCharCounts = {};
-    const correctCharCounts = {};
-    for (let char of "abcdefghijklmnopqrstuvwxyz") {
-      givenCharCounts[char] = 0;
-      correctCharCounts[char] = 0;
-    }
-
-    for (let char of givenChars) {
-      givenCharCounts[char]++;
-    }
+    const givenCharCounts = initializeCharCounts();
+    const correctCharCounts = initializeCharCounts();
+    countGivenChars(givenChars, givenCharCounts);
 
     let totalCorrectChars = 0;
     let totalTime = 0;
     for (let i = 0; i < numSegments; i++) {
-      const segmentStart = i * segmentLength;
-      const segmentEnd = Math.min(segmentStart + segmentLength, numChars);
-      const segmentTypedChars = characters.slice(segmentStart, segmentEnd);
-      const segmentTypedText = segmentTypedChars
-        .map((char) => char.name)
-        .join("");
-      const segmentCorrectChars = segmentTypedChars.filter((char, j) => {
-        const typedChar = char.name;
-        const isCorrect = typedChar === givenChars[segmentStart + j];
-        if (isCorrect) correctCharCounts[typedChar]++;
-        return isCorrect;
-      });
-      const segmentAccuracy = Math.round(
-        (segmentCorrectChars.length / segmentLength) * 100
-      );
-      const segmentWords = segmentTypedText.split(" ");
-      const segmentTotalTime = segmentTypedChars.length
-        ? segmentTypedChars[segmentTypedChars.length - 1].time -
-          (segmentStart > 0 ? characters[segmentStart - 1].time : 0)
-        : 0;
-      const segmentWpm = Math.round(
-        (segmentWords.length / segmentTotalTime) * 60000
+      const segmentResult = calculateSegmentResult(
+        i,
+        segmentLength,
+        givenChars,
+        correctCharCounts
       );
 
-      totalCorrectChars += segmentCorrectChars.length;
-      totalTime += segmentTotalTime;
+      totalCorrectChars += segmentResult.correctChars;
+      totalTime += segmentResult.totalTime;
 
-      result[`segment_${i + 1}_accuracy`] = segmentAccuracy;
-      result[`segment_${i + 1}_speed`] = segmentWpm;
+      result[`segment_${i + 1}_accuracy`] = segmentResult.accuracy;
+      result[`segment_${i + 1}_speed`] = segmentResult.speed;
     }
 
-    for (let char of "abcdefghijklmnopqrstuvwxyz") {
-      result[`${char}_accuracy`] =
-        givenCharCounts[char] > 0
-          ? correctCharCounts[char] / givenCharCounts[char]
-          : -1;
-    }
+    calculateIndividualCharAccuracy(result, correctCharCounts, givenCharCounts);
 
     result.accuracy = Math.round((totalCorrectChars / numChars) * 100);
     result.speed = Math.round((numChars / 5 / totalTime) * 60000);
     result["name"] = name;
-    console.log(result);
+
     setTotalResult((prev) => {
       prev[i] = result;
       return prev;
@@ -108,8 +148,7 @@ function App() {
     setI((prev) => prev + 1);
     setCharacters([]);
     document.getElementById("keyId").value = "";
-    console.log("total result :");
-    console.log(totalResult);
+    setStartTime(null);
   };
 
   return (
